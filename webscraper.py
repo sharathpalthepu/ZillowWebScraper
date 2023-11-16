@@ -1,11 +1,13 @@
 from datetime import date
-import random
+from bs4 import BeautifulSoup
+from selenium import webdriver
 from time import sleep
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
 import numpy as np
 import regex as re
+import requests
+
+
 
 headers = {
     'authority': 'www.zillow.com',
@@ -47,7 +49,7 @@ def scrape_page(url):
     apt_df = pd.DataFrame(columns=["Address", "Price", "Details", "Links"])
     apts = soup.find_all("article", {"class": "StyledPropertyCard-c11n-8-84-3__sc-jvwq6q-0 kbUUtf StyledPropertyCard-srp__sc-1o67r90-0 bdwyNr property-card list-card_for-rent list-card_not-saved"})
     
-    print(f"Number of property cards found: {len(apts)}")  # Debugging line
+    #print(f"Number of property cards found: {len(apts)}")  # Debugging line
 
     for apt in apts:
         try:
@@ -79,7 +81,7 @@ def scrape_page(url):
             detail_text = re.sub(r'(\bba)(\d)', r'\1 \2', detail_text)
 
             # Debugging line
-            print(f"Details: {detail_text}")
+            #print(f"Details: {detail_text}")
             detail = detail_text
 
             # Debugging lines
