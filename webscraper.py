@@ -1,3 +1,6 @@
+from datetime import date
+import random
+from time import sleep
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
@@ -26,62 +29,74 @@ params = {
     'searchQueryState': '{"pagination":{},"isMapVisible":true,"mapBounds":{"west":-88.20572740039063,"east":-87.25815659960938,"south":41.54121882182269,"north":42.125472337561625},"usersSearchTerm":"Chicago, IL","regionSelection":[{"regionId":17426,"regionType":6}],"filterState":{"ah":{"value":true},"fr":{"value":true},"fsba":{"value":false},"fsbo":{"value":false},"nc":{"value":false},"cmsn":{"value":false},"auc":{"value":false},"fore":{"value":false},"sche":{"value":false},"schm":{"value":false},"schh":{"value":false},"schp":{"value":false},"schr":{"value":false},"schc":{"value":false},"schu":{"value":false}},"isListVisible":true}',
 }
 
-#response = requests.get('https://www.zillow.com/chicago-il/rentals/', params=params, headers=headers)
-#status_code = response.status_code # check to make sure it returns 200
+page_list = []
+for i in range(1,21):
+    page_list.append(i)
 
-with requests.session() as session:
-    city = 'chicago/'
-    curr_page = 1
-    end_page = 20
-    url = ''
-    url_list = []
-    request = ''
-    request_list = []
-    soup = ''
-    soup_list = []
+main_url = "https://www.zillow.com/chicago-il/rentals/"
+page_url = "_p/"
+urls = []
+for i in page_list:
+    urls.append(main_url + f'{i}' + page_url)
 
-    while curr_page <= end_page:
-        url = 'https://www.zillow.com/chicago-il/rentals/' +f'{curr_page}_p/'
-        url_list.append(url)
-        curr_page += 1
+#sleep(8)
+
+def scrape_page(url):
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    apt_df = pd.DataFrame(columns=["Address", "Price", "Details", "Links"])
+    apts = soup.find_all("article", {"class": "StyledPropertyCard-c11n-8-84-3__sc-jvwq6q-0 kbUUtf StyledPropertyCard-srp__sc-1o67r90-0 bdwyNr property-card list-card_for-rent list-card_not-saved"})
     
-    for url in url_list:
-        request = session.get(url, headers=headers)
-        request_list.append(request)
-    
-    for request in request_list:
-        encode = request.encoding
-        content = request.content.decode(encode)
-        soup = BeautifulSoup(content, 'html.parser')
-        soup_list.append(soup)
+    print(f"Number of property cards found: {len(apts)}")  # Debugging line
 
-df_pages = []
-for soup in soup_list:
-    df = pd.DataFrame()
-    for i in soup:
-        address = soup.find_all ('div',attrs={'property-card-addr'})
-        rent = list(soup.find_all(class_="PropertyCardWrapper__StyledPriceLine-srp__sc-16e8gqd-1 iMKTKr"))
-        beds = list(soup.find_all(class_="property-card-details"))
-        details = soup.find_all ('div', {'class': 'property-card-details'})
-        last_updated = soup.find_all ('div', {'class': 'property-card-top'})
-        link = soup.find_all (class_= 'property-card-link')
+    for apt in apts:
+        try:
+            # Print the entire property card HTML for inspection
+            #print(f"Property Card HTML: {apt}")
 
-        df['address'] = address
-        df['rent'] = rent
-        df['beds'] = beds
-    
-    urls = []
-    for link in soup.find_all("article"):
-        href = link.find('a',class_="property-card-link")
-        if(href):
-            addresses = href.find('address')
-            addresses.extract()
-        urls.append(href)
-    
-    df['links'] = urls
-    df['links'] = df['links'].astype('str')
-    df['links'] = df['links'].replace('<a class="list-card-link list-card-link-top-margin" href="', ' ', regex=True)
-    df['links'] = df['links'].replace('" tabindex="0"></a>', ' ', regex=True)
-    df_pages.append(df)
+            address_element = apt.find("address", {"data-test": "property-card-addr"})
+            price_element = apt.find("span", {"data-test": "property-card-price"})
+            detail_element = apt.find("ul", {"class": "StyledPropertyCardHomeDetailsList-c11n-8-84-3__sc-1xvdaej-0 eYPFID"})
+            link_element = apt.find("a", {"class": "property-card-link"})
 
-print(df_pages[0])
+            # Debugging lines
+            #print(f"Address Element: {address_element}")
+            #print(f"Price Element: {price_element}")
+            #print(f"Detail Element: {detail_element}")
+            #print(f"Link Element: {link_element}")
+
+            # Extract text content
+            address = address_element.text if address_element else None
+            price = price_element.text if price_element else None
+            link = link_element.get("href") if link_element else None
+            # Example text editing controls
+            detail_text = detail_element.text if detail_element else None
+
+            # Add space between 'bd' and the following number
+            detail_text = re.sub(r'(\b(bd|bds))(\d)', r'\1 \3', detail_text)
+
+            # Add space between 'ba' and the following number
+            detail_text = re.sub(r'(\bba)(\d)', r'\1 \2', detail_text)
+
+            # Debugging line
+            print(f"Details: {detail_text}")
+            detail = detail_text
+
+            # Debugging lines
+            #print(f"Address: {address}")
+            #print(f"Price: {price}")
+            #print(f"Details: {detail}")
+            #print(f"Link: {link}")
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        apt_info = pd.DataFrame({"Address": [address], "Price": [price], "Details": [detail], "Links": [link]})
+        apt_df = pd.concat([apt_df, apt_info], ignore_index=True)
+
+    return apt_df
+
+#sleep(30)
+page1 = scrape_page(urls[19])
+print(page1)
+
