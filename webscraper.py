@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import regex as re
 import requests
+from urllib.parse import urljoin
 
 
 
@@ -42,35 +43,38 @@ for i in page_list:
     urls.append(main_url + f'{i}' + page_url)
 
 #sleep(8)
+#PATH = "/Users/sharath/Documents/zillow project/chrome-mac-x64/Google Chrome for Testing.app"
 
 def scrape_page(url):
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.content, 'html.parser')
     apt_df = pd.DataFrame(columns=["Address", "Price", "Details", "Links"])
-    apts = soup.find_all("article", {"class": "StyledPropertyCard-c11n-8-84-3__sc-jvwq6q-0 kbUUtf StyledPropertyCard-srp__sc-1o67r90-0 bdwyNr property-card list-card_for-rent list-card_not-saved"})
-    
-    #print(f"Number of property cards found: {len(apts)}")  # Debugging line
+    apts = soup.find_all("article", {"class": [
+    "StyledPropertyCard-c11n-8-84-3__sc-jvwq6q-0",
+    "kbUUtf",
+    "StyledPropertyCard-srp__sc-1o67r90-0",
+    "bdwyNr",
+    "property-card",
+    "list-card_for-rent",
+    "list-card_not-saved"
+    ]})
+    print("Number of Apartment Cards:" + str(len(apts)))
 
-    for apt in apts:
+    for apt in apts:  
         try:
-            # Print the entire property card HTML for inspection
-            #print(f"Property Card HTML: {apt}")
-
             address_element = apt.find("address", {"data-test": "property-card-addr"})
             price_element = apt.find("span", {"data-test": "property-card-price"})
             detail_element = apt.find("ul", {"class": "StyledPropertyCardHomeDetailsList-c11n-8-84-3__sc-1xvdaej-0 eYPFID"})
             link_element = apt.find("a", {"class": "property-card-link"})
 
-            # Debugging lines
-            #print(f"Address Element: {address_element}")
-            #print(f"Price Element: {price_element}")
-            #print(f"Detail Element: {detail_element}")
-            #print(f"Link Element: {link_element}")
-
             # Extract text content
             address = address_element.text if address_element else None
             price = price_element.text if price_element else None
             link = link_element.get("href") if link_element else None
+            
+            if link and not link.startswith("http"):
+                link = urljoin("https://www.zillow.com", link)
+            print(link)
             # Example text editing controls
             detail_text = detail_element.text if detail_element else None
 
@@ -80,18 +84,13 @@ def scrape_page(url):
             # Add space between 'ba' and the following number
             detail_text = re.sub(r'(\bba)(\d)', r'\1 \2', detail_text)
 
-            # Debugging line
-            #print(f"Details: {detail_text}")
-            detail = detail_text
 
-            # Debugging lines
-            #print(f"Address: {address}")
-            #print(f"Price: {price}")
-            #print(f"Details: {detail}")
-            #print(f"Link: {link}")
+
+            detail = detail_text
 
         except Exception as e:
             print(f"An error occurred: {e}")
+            detail = None
 
         apt_info = pd.DataFrame({"Address": [address], "Price": [price], "Details": [detail], "Links": [link]})
         apt_df = pd.concat([apt_df, apt_info], ignore_index=True)
@@ -99,6 +98,6 @@ def scrape_page(url):
     return apt_df
 
 #sleep(30)
-page1 = scrape_page(urls[19])
+page1 = scrape_page(urls[0])
 print(page1)
 
