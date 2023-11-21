@@ -1,6 +1,12 @@
 from datetime import date
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 import pandas as pd
 import numpy as np
@@ -42,40 +48,40 @@ urls = []
 for i in page_list:
     urls.append(main_url + f'{i}' + page_url)
 
-#sleep(8)
-#PATH = "/Users/sharath/Documents/zillow project/chrome-mac-x64/Google Chrome for Testing.app"
-
 def scrape_page(url):
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.content, 'html.parser')
     apt_df = pd.DataFrame(columns=["Address", "Price", "Details", "Links"])
     apts = soup.find_all("article", {"class": [
-    "StyledPropertyCard-c11n-8-84-3__sc-jvwq6q-0",
-    "kbUUtf",
-    "StyledPropertyCard-srp__sc-1o67r90-0",
-    "bdwyNr",
-    "property-card",
-    "list-card_for-rent",
-    "list-card_not-saved"
+        "StyledPropertyCard-c11n-8-84-3__sc-jvwq6q-0",
+        "kbUUtf",
+        "StyledPropertyCard-srp__sc-1o67r90-0",
+        "bdwyNr",
+        "property-card",
+        "list-card_for-rent",
+        "list-card_not-saved"
     ]})
-    print("Number of Apartment Cards:" + str(len(apts)))
 
     for apt in apts:  
         try:
             address_element = apt.find("address", {"data-test": "property-card-addr"})
-            price_element = apt.find("span", {"data-test": "property-card-price"})
-            detail_element = apt.find("ul", {"class": "StyledPropertyCardHomeDetailsList-c11n-8-84-3__sc-1xvdaej-0 eYPFID"})
-            link_element = apt.find("a", {"class": "property-card-link"})
-
             # Extract text content
             address = address_element.text if address_element else None
-            price = price_element.text if price_element else None
-            link = link_element.get("href") if link_element else None
+
+        except Exception as e:
+            print(f"An error occurred with the address element: {e}")
+            address = None
             
-            if link and not link.startswith("http"):
-                link = urljoin("https://www.zillow.com", link)
-            print(link)
-            # Example text editing controls
+        try:    
+            price_element = apt.find("span", {"data-test": "property-card-price"})
+            price = price_element.text if price_element else None
+
+        except Exception as e:
+            print(f"An error occurred with the price element: {e}")
+            price = None
+
+        try:
+            detail_element = apt.find("ul", {"class": "StyledPropertyCardHomeDetailsList-c11n-8-84-3__sc-1xvdaej-0 eYPFID"})
             detail_text = detail_element.text if detail_element else None
 
             # Add space between 'bd' and the following number
@@ -84,20 +90,28 @@ def scrape_page(url):
             # Add space between 'ba' and the following number
             detail_text = re.sub(r'(\bba)(\d)', r'\1 \2', detail_text)
 
-
-
             detail = detail_text
+        except Exception as e:
+            print(f"An error occurred with the detail element: {e}")
+            detail = None
+
+        try:
+            link_element = apt.find("a", {"class": "property-card-link"})
+            link = link_element.get("href") if link_element else None
+            
+            if link and not link.startswith("http"):
+                link = urljoin("https://www.zillow.com", link)
 
         except Exception as e:
-            print(f"An error occurred: {e}")
-            detail = None
+            print(f"An error occurred with the link element: {e}")
+            link = None   
 
         apt_info = pd.DataFrame({"Address": [address], "Price": [price], "Details": [detail], "Links": [link]})
         apt_df = pd.concat([apt_df, apt_info], ignore_index=True)
 
     return apt_df
 
-#sleep(30)
-page1 = scrape_page(urls[0])
-print(page1)
+chiapts = pd.concat([scrape_page(url) for url in urls], ignore_index=True)
+chiapts.to_csv("chiapts.csv")
+
 
