@@ -1,15 +1,20 @@
 import pandas as pd
 import googlemaps
 from geopy.geocoders import GoogleV3
+import configparser
+
+
 
 df = pd.read_csv('chicago_apartments.csv')
 
 # Create a new DataFrame to store the updated data
 new_rows = []
 
-# create API key using googlemaps geocoding API
-API_KEY = 'AIzaSyAScCshi5dAcLkJaSFcO_i9QIkcT0IUnDc'
-gmaps = googlemaps.Client(key=API_KEY)
+# access api key from another file to ensure security for api key
+config = configparser.ConfigParser()
+config.read('config.ini')
+api_key = config['API_KEYS']['YOUR_API_KEY']
+gmaps = googlemaps.Client(key=api_key)
 
 # create function to extract zipcode from a given address
 def get_zipcode(address):
