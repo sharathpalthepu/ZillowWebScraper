@@ -14,15 +14,16 @@ The scope of this project was for personal use in understanding more about the p
 ## Getting Started
 
 ### Prerequisites
-The dependencies we used were some python packages. More specifically: beautifulsoup, pandas, regex, requests, urllib, googlemaps, and configparser. 
+The dependencies we used were some Python packages. More specifically: beautifulsoup, pandas, regex, requests, urllib, googlemaps, and configparser. 
 We also used a Google Cloud Platform account to acquire a Geocoding API key for our project.
 
 ### Installation
-The commands to install all the depencies below are as listed 
+The command to install the dependencies is shown below
 
 ```bash
 # Use this as the template to install all packages
 pip install {package name}
+```
 
 ## Data
 Our data is shown in multiple .csv files but our final result is shown here below.
