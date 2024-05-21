@@ -27,4 +27,4 @@ pip install {package name}
 
 ## Data
 Our data is shown in multiple .csv files but our final result is shown here below.
-Tableau Dashboard: https://public.tableau.com/shared/GDNZBM5G6?:display_count=n&:origin=viz_share_link
+Tableau Dashboard: [https://public.tableau.com/shared/GDNZBM5G6?:display_count=n&:origin=viz_share_link](https://public.tableau.com/views/ChicagoAparmentsDashboard/Dashboard?:language=en-US&:sid=&:display_count=n&:origin=viz_share_link)
